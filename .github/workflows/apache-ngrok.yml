@@ -15,12 +15,14 @@ jobs:
         sudo systemctl start apache2
         echo "<h1>Hello from GitHub Actions</h1>" | sudo tee /var/www/html/index.html
 
-    - name: Install Ngrok
+    - name: Install jq
+      run: sudo apt-get install jq -y
+
+    - name: Download and Install Ngrok
       run: |
-        curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
-        echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
-        sudo apt-get update
-        sudo apt-get install ngrok -y
+        curl -o ngrok.tgz https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz
+        tar -xzf ngrok.tgz
+        sudo mv ngrok /usr/local/bin/
 
     - name: Start Ngrok tunnel
       env:
@@ -28,15 +30,14 @@ jobs:
       run: |
         ngrok config add-authtoken $NGROK_AUTH_TOKEN
         nohup ngrok http 80 > ngrok.log &
-        sleep 5
+        sleep 10
         curl http://localhost:4040/api/tunnels > tunnels.json
         cat tunnels.json
 
     - name: Extract Public URL
       run: |
-        cat tunnels.json | grep -o 'https://[0-9a-z]*\.ngrok.io' | head -n 1 > url.txt
-        echo "🔗 Access your Apache server here:"
-        cat url.txt
+        public_url=$(jq -r '.tunnels[0].public_url' tunnels.json)
+        echo "🔗 Access your Apache server here: $public_url"
 
     - name: Keep Alive (Optional)
       run: |

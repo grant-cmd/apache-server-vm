@@ -2,6 +2,7 @@ name: Expose SSH with Ngrok
 
 on:
   workflow_dispatch:
+  push:
 
 jobs:
   ssh-server:

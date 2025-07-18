@@ -1,0 +1,44 @@
+name: Apache with Ngrok
+
+on:
+  workflow_dispatch:  # Manually triggered
+
+jobs:
+  apache-server:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Update and Install Apache
+      run: |
+        sudo apt-get update
+        sudo apt-get install apache2 -y
+        sudo systemctl start apache2
+        echo "<h1>Hello from GitHub Actions</h1>" | sudo tee /var/www/html/index.html
+
+    - name: Install Ngrok
+      run: |
+        curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+        echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+        sudo apt-get update
+        sudo apt-get install ngrok -y
+
+    - name: Start Ngrok tunnel
+      env:
+        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+      run: |
+        ngrok config add-authtoken $NGROK_AUTH_TOKEN
+        nohup ngrok http 80 > ngrok.log &
+        sleep 5
+        curl http://localhost:4040/api/tunnels > tunnels.json
+        cat tunnels.json
+
+    - name: Extract Public URL
+      run: |
+        cat tunnels.json | grep -o 'https://[0-9a-z]*\.ngrok.io' | head -n 1 > url.txt
+        echo "🔗 Access your Apache server here:"
+        cat url.txt
+
+    - name: Keep Alive (Optional)
+      run: |
+        echo "⏳ Sleeping to keep tunnel alive for 15 minutes..."
+        sleep 900  # Keep alive for 15 minutes (900 seconds)

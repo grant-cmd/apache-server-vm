@@ -42,5 +42,5 @@ jobs:
 
     - name: Keep Alive (Optional)
       run: |
-        echo "⏳ Sleeping to keep tunnel alive for 15 minutes..."
-        sleep 900  # Keep alive for 15 minutes (900 seconds)
+        echo "⏳ Sleeping to keep tunnel alive for 6 hours..."
+        sleep 21600  # Keep alive for 6 hours (21600 seconds)

@@ -2,7 +2,6 @@ name: Apache with Ngrok
 
 on:
   workflow_dispatch:  # Manually triggered
-  push:
 
 jobs:
   apache-server:

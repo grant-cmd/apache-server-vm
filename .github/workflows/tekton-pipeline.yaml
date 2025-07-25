@@ -1,0 +1,42 @@
+name: Tekton-Ai-Training with Ngrok
+
+on:
+  workflow_dispatch:  # Manually triggered
+
+jobs:
+  tekton-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Update and Install Apache
+      run: |
+        sudo apt-get update
+       
+    - name: Install jq
+      run: sudo apt-get install jq -y
+
+    - name: Download and Install Ngrok
+      run: |
+        curl -o ngrok.tgz https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz
+        tar -xzf ngrok.tgz
+        sudo mv ngrok /usr/local/bin/
+
+    - name: Start Ngrok tunnel
+      env:
+        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+      run: |
+        ngrok config add-authtoken $NGROK_AUTH_TOKEN
+        nohup ngrok http 80 > ngrok.log &
+        sleep 10
+        curl http://localhost:4040/api/tunnels > tunnels.json
+        cat tunnels.json
+
+    - name: Extract Public URL
+      run: |
+        public_url=$(jq -r '.tunnels[0].public_url' tunnels.json)
+        echo "🔗 Access your Apache server here: $public_url"
+
+    - name: Keep Alive (Optional)
+      run: |
+        echo "⏳ Sleeping to keep tunnel alive for 6 hours..."
+        sleep 21600  # Keep alive for 6 hours (21600 seconds)
